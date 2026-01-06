@@ -1,0 +1,16 @@
+[Unit]
+Description=Gunicorn instance to serve CronDashboard
+After=network.target
+
+[Service]
+User=your_username
+Group=your_username
+
+WorkingDirectory=/path/to/your/cronDashboard
+
+Environment="PATH=/path/to/your/cronDashboard/.venv/bin"
+
+ExecStart=/path/to/your/cronDashboard/.venv/bin/gunicorn --workers 4 --bind 127.0.0.1:9090 --access-logfile /var/log/crondashboard/access.log --error-logfile /var/log/crondashboard/error.log app:app
+
+[Install]
+WantedBy=multi-user.target

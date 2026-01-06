@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Cron Dahboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet"/>
+    <style>
+        .select2-container--default .select2-selection--multiple {
+            background-color: white;
+            border-color: #d1d5db; /* gray-300 */
+            border-radius: 0.5rem;
+            min-height: 42px;
+            display: flex;
+            align-items: center;
+            padding: 2px 8px;
+        }
+
+        .dark .select2-container--default .select2-selection--multiple {
+            background-color: #1f2937; /* gray-800 */
+            border-color: #374151; /* gray-700 */
+        }
+
+        .select2-container--default .select2-selection--multiple .select2-selection__choice {
+            background-color: #dbeafe; /* blue-100 */
+            color: #1e40af; /* blue-800 */
+            border: none;
+            border-radius: 0.375rem;
+            padding: 2px 8px;
+            margin: 2px;
+            display: flex;
+            align-items: center;
+        }
+
+        .dark .select2-container--default .select2-selection--multiple .select2-selection__choice {
+            background-color: rgba(30, 58, 138, 0.3); /* blue-900 with opacity */
+            color: #93c5fd; /* blue-300 */
+        }
+
+        .select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
+            color: #2563eb;
+            border: none;
+            margin-right: 4px;
+        }
+
+        .dark .select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
+            color: #60a5fa;
+        }
+
+        .select2-dropdown {
+            background-color: white;
+            border-color: #d1d5db;
+        }
+
+        .dark .select2-dropdown {
+            background-color: #1f2937;
+            border-color: #374151;
+            color: white;
+        }
+
+        .select2-search__field {
+            color: white;
+        }
+
+        .select2-container--default .select2-results__option--highlighted[aria-selected] {
+            background-color: #2563eb !important;
+            color: white !important;
+        }
+
+        .select2-selection__rendered {
+            display: flex !important;
+        }
+    </style>
+</head>
+<body class="bg-gray-800 p-[4rem] dark">
+<div class="bg-gray-900 text-white block p-6 border border-gray-600 rounded rounded-4 shadow-xl w-full h-full shadow-blue-300/50">
+    <div class="flex justify-between">
+        <h5 class="mb-3 mx-4 text-2xl font-semibold tracking-tight text-heading leading-8">
+            Active Jobs
+        </h5>
+        <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mb-3"
+                command="show-modal" commandfor="dialog">
+            Add Cronjob
+        </button>
+    </div>
+    <div class="bg-gray-900 text-white block p-6 border border-gray-600 rounded shadow-xl w-full h-100 text-left overflow-y-auto">
+        <div class="relative overflow-x-auto bg-neutral-primary-soft shadow-xs rounded-base border border-default overflow-y-auto">
+            <table class="w-full text-sm text-left rtl:text-right text-body" id="main-table">
+                <thead class="bg-neutral-secondary-soft border-b border-default">
+                <tr>
+                    <th scope="col" class="px-6 py-3 font-medium">
+                        #
+                    </th>
+                    <th scope="col" class="px-6 py-3 font-medium">
+                        Schedule
+                    </th>
+                    <th scope="col" class="px-6 py-3 font-medium">
+                        Command
+                    </th>
+                    <th scope="col" class="px-6 py-3 font-medium">
+                        Comment
+                    </th>
+                    <th scope="col" class="px-6 py-3 font-medium">
+                        Last Called
+                    </th>
+                    <th scope="col" class="px-6 py-3 font-medium">
+                        Next Call
+                    </th>
+                    <th scope="col" class="px-6 py-3 font-medium">
+                        Status
+                    </th>
+                    <th scope="col" class="px-6 py-3 font-medium">
+                        Action
+                    </th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for d in data %}
+                    <tr class="odd:bg-neutral-primary even:bg-neutral-secondary-soft border-b border-default">
+                        <td class="px-6 py-4 font-medium text-heading whitespace-nowrap text-end">
+                            {{ loop.index }}.
+                        </td>
+                        <td class="px-6 py-4 text-nowrap {{ 'opacity-50' if not d.status }}">
+                            {{ d.slices }}
+                        </td>
+                        <td class="px-6 py-4 {{ 'opacity-50' if not d.status }}">
+                            {{ d.command }}
+                        </td>
+                        <td class="px-6 py-4 {{ 'opacity-50' if not d.status }}">
+                            {{ d.comment }}
+                        </td>
+                        <td class="px-6 py-4 {{ 'opacity-50' if not d.status }}">
+                            {% if d.status %}
+                                {{ d.last }}
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 {{ 'opacity-50' if not d.status }}">
+                            {% if d.status %}
+                                {{ d.next }}
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 {{ 'opacity-50' if not d.status }}">
+                            {{ d.status }}
+                        </td>
+                        <td class="px-6 py-4 text-center">
+                            <div class="inline-flex">
+                                <button class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-l edit"
+                                        data-schedule="{{ d.slices }}" data-command="{{ d.command }}"
+                                        data-comment="{{ d.comment }}">
+                                    Edit
+                                </button>
+                                <button class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 delete"
+                                        data-schedule="{{ d.slices }}" data-command="{{ d.command }}"
+                                        data-comment="{{ d.comment }}">
+                                    Delete
+                                </button>
+                                {% if d.status %}
+                                    <button class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-r deactivate"
+                                            data-schedule="{{ d.slices }}" data-command="{{ d.command }}"
+                                            data-comment="{{ d.comment }}" data-status="{{ 'deactivate' }}">
+                                        Deactivate
+                                    </button>
+                                {% else %}
+                                    <button class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-r activate"
+                                            data-schedule="{{ d.slices }}" data-command="{{ d.command }}"
+                                            data-comment="{{ d.comment }}" data-status="{{ 'activate' }}">
+                                        Activate
+                                    </button>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+<el-dialog>
+    <dialog id="dialog" aria-labelledby="dialog-title"
+            class="fixed inset-0 size-auto max-h-none max-w-none
+            overflow-y-auto bg-transparent backdrop:bg-transparent">
+        <el-dialog-backdrop class="fixed inset-0 bg-gray-900/50 transition-opacity data-closed:opacity-0
+            data-enter:duration-300 data-enter:ease-out data-leave:duration-200 data-leave:ease-in"></el-dialog-backdrop>
+        <div tabindex="0" class="flex min-h-full items-end justify-center
+            p-4 text-center focus:outline-none sm:items-center sm:p-0">
+            <el-dialog-panel class="relative transform overflow-hidden rounded-lg bg-gray-800 text-left shadow-xl
+            outline -outline-offset-1 outline-white/10 transition-all data-closed:translate-y-4 data-closed:opacity-0
+            data-enter:duration-300 data-enter:ease-out data-leave:duration-200 data-leave:ease-in sm:my-8 sm:w-full
+            sm:max-w-[75%] data-closed:sm:translate-y-0 data-closed:sm:scale-95">
+                <form id="main-form">
+                    <input type="hidden" name="oldSchedule" id="oldSchedule">
+                    <input type="hidden" name="oldCommand" id="oldCommand">
+                    <input type="hidden" name="oldComment" id="oldComment">
+                    <div class="bg-gray-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                        <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+                            <h3 id="dialog-title" class="text-base font-semibold text-white">Add Job</h3>
+                            <hr class="w-100 border border-white mb-8">
+                            <div class="mt-2">
+
+                                <div class="mb-6 col-span-full">
+                                    <label class="block text-sm/6 font-medium text-white">Schedule</label>
+                                    <div class="grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-5">
+                                        <div class="sm:col-span">
+                                            <label class="block text-sm/6 font-medium text-white"
+                                                   for="minute">Minute</label>
+                                            <div class="mt-2 grid grid-cols-1">
+                                                <select id="minute" name="minute" multiple
+                                                        class="col-start-1 row-start-1 w-full appearance-none rounded-md bg-white/5 py-1.5 pr-8 pl-3 text-base text-white outline-1 -outline-offset-1 outline-white/10 *:bg-gray-800 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-500 sm:text-sm/6">
+                                                    <option value="*">Any</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="sm:col-span">
+                                            <label class="block text-sm/6 font-medium text-white"
+                                                   for="hour">Hour</label>
+                                            <div class="mt-2 grid grid-cols-1">
+                                                <select id="hour" name="hour" multiple
+                                                        class="col-start-1 row-start-1 w-full appearance-none rounded-md bg-white/5 py-1.5 pr-8 pl-3 text-base text-white outline-1 -outline-offset-1 outline-white/10 *:bg-gray-800 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-500 sm:text-sm/6">
+                                                    <option value="*">Any</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="sm:col-span">
+                                            <label class="block text-sm/6 font-medium text-white"
+                                                   for="date">Date</label>
+                                            <div class="mt-2 grid grid-cols-1">
+                                                <select id="date" name="date" multiple
+                                                        class="col-start-1 row-start-1 w-full appearance-none rounded-md bg-white/5 py-1.5 pr-8 pl-3 text-base text-white outline-1 -outline-offset-1 outline-white/10 *:bg-gray-800 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-500 sm:text-sm/6">
+                                                    <option value="*">Any</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="sm:col-span">
+                                            <label class="block text-sm/6 font-medium text-white"
+                                                   for="month">Month</label>
+                                            <div class="mt-2 grid grid-cols-1">
+                                                <select id="month" name="month" multiple
+                                                        class="col-start-1 row-start-1 w-full appearance-none rounded-md bg-white/5 py-1.5 pr-8 pl-3 text-base text-white outline-1 -outline-offset-1 outline-white/10 *:bg-gray-800 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-500 sm:text-sm/6">
+                                                    <option value="*">Any</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="sm:col-span">
+                                            <label class="block text-sm/6 font-medium text-white"
+                                                   for="day">Day</label>
+                                            <div class="mt-2 grid grid-cols-1">
+                                                <select id="day" name="day" multiple
+                                                        class="col-start-1 row-start-1 w-full appearance-none rounded-md bg-white/5 py-1.5 pr-8 pl-3 text-base text-white outline-1 -outline-offset-1 outline-white/10 *:bg-gray-800 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-500 sm:text-sm/6">
+                                                    <option value="*">Any</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-2">
+                                    <div class="mb-6 sm:col-span">
+                                        <label for="command"
+                                               class="block text-sm/6 font-medium text-white">Command</label>
+                                        <div class="mt-2">
+                                        <textarea id="command" name="command" rows="2"
+                                                  class="block w-full rounded-md bg-white/5 px-3 py-1.5 text-base text-white outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-500 sm:text-sm/6"></textarea>
+                                        </div>
+                                    </div>
+                                    <div class="mb-6 sm:col-span">
+                                        <label for="comment"
+                                               class="block text-sm/6 font-medium text-white">Comment</label>
+                                        <div class="mt-2">
+                                        <textarea id="comment" name="comment" rows="2"
+                                                  class="block w-full rounded-md bg-white/5 px-3 py-1.5 text-base text-white outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-500 sm:text-sm/6"></textarea>
+                                        </div>
+                                        <p class="mt-3 text-sm/6 text-gray-400">Optional</p>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-gray-700/25 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
+                        <button type="submit" command="close" commandfor="dialog"
+                                class="inline-flex w-full justify-center rounded-md bg-blue-500 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-400 sm:ml-3 sm:w-auto">
+                            Save
+                        </button>
+                        <button type="button" command="close" commandfor="dialog"
+                                class="mt-3 inline-flex w-full justify-center rounded-md bg-white/10 px-3 py-2 text-sm font-semibold text-white inset-ring inset-ring-white/5 hover:bg-white/20 sm:mt-0 sm:w-auto">
+                            Cancel
+                        </button>
+                    </div>
+                </form>
+            </el-dialog-panel>
+        </div>
+    </dialog>
+</el-dialog>
+
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"
+        integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+    $(document).ready(function () {
+
+        let dialog = $('#dialog'),
+            selMinute = $("#minute"),
+            selHour = $("#hour"),
+            selDate = $("#date"),
+            selMonth = $("#month"),
+            selDay = $("#day"),
+            dayname = [
+                "Sun",
+                "Mon",
+                "Tue",
+                "Wed",
+                "Thu",
+                "Fri",
+                "Sat",
+            ],
+            select2Option = {
+                dropdownParent: dialog,
+                tags: true,
+            },
+            method = "POST"
+
+        for (let i = 0; i < 60; i++) {
+            let isi = i.toString()
+            selMinute.append(new Option(isi, isi))
+        }
+        for (let i = 0; i < 24; i++) {
+            let isi = i.toString()
+            selHour.append(new Option(isi, isi))
+        }
+        for (let i = 1; i <= 31; i++) {
+            let isi = i.toString()
+            selDate.append(new Option(isi, isi))
+        }
+        for (let i = 1; i <= 12; i++) {
+            let isi = i.toString()
+            selMonth.append(new Option(isi, isi))
+        }
+        for (let i = 0; i < 7; i++) {
+            selDay.append(new Option(dayname[i], i.toString()));
+        }
+
+        selMinute.select2(select2Option);
+        selHour.select2(select2Option);
+        selDate.select2(select2Option);
+        selMonth.select2(select2Option);
+        selDay.select2(select2Option);
+
+
+        $("#main-table").on("click", ".deactivate,.activate", function () {
+            let data = $(this).data()
+            $.ajax({
+                method: "PATCH",
+                data: data,
+                error: function (xhr, textStatus, errorThrown) {
+                    console.log(xhr, textStatus, errorThrown);
+                },
+                success: function (res) {
+                    if (res.status === "success") {
+                        location.reload()
+                    }
+                },
+            });
+        })
+            .on("click", ".edit", function () {
+                let data = $(this).data(),
+                    waktu = data['schedule'].split(" ")
+                selMinute.val(waktu[0]).trigger("change");
+                selHour.val(waktu[1]).trigger("change");
+                selDate.val(waktu[2]).trigger("change");
+                selMonth.val(waktu[3]).trigger("change");
+                let newOption = new Option(waktu[4], waktu[4], true, true);
+                selDay.append(newOption);
+                selDay.trigger("change");
+                $("#command").val(data['command']);
+                $("#comment").val(data['comment']);
+                $("#oldCommand").val(data['command']);
+                $("#oldComment").val(data['comment']);
+                dialog[0].showModal();
+                method = "PUT"
+            })
+            .on("click", ".delete", function () {
+                let data = $(this).data()
+                $.ajax({
+                    method: "DELETE",
+                    data: data,
+                    error: function (xhr, textStatus, errorThrown) {
+                        console.log(xhr, textStatus, errorThrown);
+                    },
+                    success: function (res) {
+                        if (res.status === "success") {
+                            location.reload()
+                        }
+                    },
+                });
+            });
+
+        $("#main-form").submit(function (e) {
+            e.preventDefault();
+            let data = new FormData(this)
+            $.ajax({
+                method: method,
+                data: data,
+                processData: false,
+                contentType: false,
+                error: function (xhr, textStatus, errorThrown) {
+                    console.log(xhr, textStatus, errorThrown);
+                },
+                success: function (res) {
+                    if (res.status === "success") {
+                        location.reload();
+                    }
+                },
+            });
+        });
+
+    });
+</script>
+</body>
+</html>
